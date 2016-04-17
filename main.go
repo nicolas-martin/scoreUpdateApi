@@ -122,7 +122,7 @@ func postUserHandler(w http.ResponseWriter, r *http.Request) {
 func parseSchedule() {
 
 	//TODO: Put this somewhere else.
-	db, err := sql.Open("mysql", "root:password@/ScoreBot")
+	db, err := sql.Open("mymysql", "sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -149,7 +149,7 @@ func parseSchedule() {
 
 func getUser(teamID int) []user {
 	//TODO: Put this somewhere else.
-	db, err := sql.Open("mysql", "root:password@/ScoreBot")
+	db, err := sql.Open("mymysql", "sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -179,7 +179,7 @@ func getUser(teamID int) []user {
 
 func insertUser(vUser *user) {
 	//TODO: Put this somewhere else.
-	db, err := sql.Open("mysql", "root:password@/ScoreBot")
+	db, err := sql.Open("mymysql", "sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
 	if err != nil {
 		panic(err.Error())
 	}
