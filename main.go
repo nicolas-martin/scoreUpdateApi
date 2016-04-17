@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	_ "github.com/ziutek/mymysql/godrv"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
@@ -17,6 +17,7 @@ func init() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", welcome).Methods("GET")
+	r.HandleFunc("/User", getAllUserHandler).Methods("GET")
 	r.HandleFunc("/User", postUserHandler).Methods("POST")
 	r.HandleFunc("/User/{teamID:[0-9]+}", getUserHandler).Methods("GET")
 	r.HandleFunc("/Subscribe", postSubscriptionHandler).Methods("POST")
@@ -27,6 +28,27 @@ func init() {
 
 func welcome(w http.ResponseWriter, r *http.Request) {
     fmt.Fprint(w, "Welcome to the SportsBot API");
+}
+
+func createDbConn() *sql.DB {
+	db, err :=  sql.Open("mysql", "root:aiwojefoa39j2a9VVA3jj32fa3@cloudsql(sportsbot-1255:us-east1:sportsupdate)/ScoreBot")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return db
+}
+
+func getAllUserHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	users := getAllUsers()
+
+	jsonUsers, _ := json.Marshal(users)
+
+	w.Write(jsonUsers)
+
 }
 
 func postSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
@@ -48,11 +70,8 @@ func postSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func insertSubscription(vSubscription *subscription) {
-	//TODO: Put this somewhere else.
-	db, err := sql.Open("mymysql", "cloudsql:sportsbot-1255:us-east1*sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
-	if err != nil {
-		panic(err.Error())
-	}
+
+	db := createDbConn()
 
 	defer db.Close()
 
@@ -124,12 +143,8 @@ func postUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseSchedule() {
-
-	//TODO: Put this somewhere else.
-	db, err := sql.Open("mymysql", "cloudsql:sportsbot-1255:us-east1*sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
-	if err != nil {
-		panic(err.Error())
-	}
+	
+	db := createDbConn()
 
 	defer db.Close()
 
@@ -152,16 +167,14 @@ func parseSchedule() {
 }
 
 func getUser(teamID int) []user {
-	//TODO: Put this somewhere else.
-	db, err := sql.Open("mymysql", "cloudsql:sportsbot-1255:us-east1*sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
-	if err != nil {
-		panic(err.Error())
-	}
+	
+	db := createDbConn()
+
 	defer db.Close()
 
 	fmt.Println("got a get")
 
-	sqlQuery := "select UserName, Platform, Phone, Country, Joined from users where userId in (select Users_UserId from subscription where Teams_TeamId = ?)"
+	sqlQuery := "select UserName, Platform, Phone, Country, Joined from Users where userId in (select Users_UserId from Subscription where Teams_TeamId = ?)"
 
 	row, err := db.Query(sqlQuery, teamID)
 	if err != nil {
@@ -181,12 +194,41 @@ func getUser(teamID int) []user {
 	return userList
 }
 
-func insertUser(vUser *user) {
-	//TODO: Put this somewhere else.
-	db, err := sql.Open("mymysql", "cloudsql:sportsbot-1255:us-east1*sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
+func getAllUsers() []user {
+	db := createDbConn()
+
+	defer db.Close()
+
+	fmt.Println("got a get all")
+
+	sqlQuery := "select UserName, Platform, Phone, Country, Joined from Users"
+
+	row, err := db.Query(sqlQuery)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
+
+	var userList []user
+
+	for row.Next() {
+		u := user{}
+
+		err := row.Scan(&u.Username, &u.Platform, &u.Phone, &u.Country, &u.Joined)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		userList = append(userList, u)
+	}
+
+	return userList
+}
+
+func insertUser(vUser *user) {
+	
+	db := createDbConn()
+
 	defer db.Close()
 
 	fmt.Println("got in the insert")
