@@ -14,9 +14,6 @@ import (
 )
 
 func main() {
-	// nhl := Sports.Nhl{Game: Interfaces.Game{URL: "https://statsapi.web.nhl.com/api/v1/game/2015021078/feed/live"}}
-	// nhl.Loop()
-
 	r := mux.NewRouter()
 	r.HandleFunc("/User", postUserHandler).Methods("POST")
 	r.HandleFunc("/User/{teamID:[0-9]+}", getUserHandler).Methods("GET")
@@ -26,7 +23,6 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 
 	//https://statsapi.web.nhl.com/api/v1/schedule?startDate=2016-04-16&endDate=2016-04-21
-	parseSchedule()
 }
 
 func postSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +193,6 @@ func insertUser(vUser *user) {
 	}
 
 	t := time.Now()
-	// joinedDate, _ := time.Parse("2006-01-02T15:04:05Z07:00", t)
 
 	_, err = stmNewOutbox.Exec(vUser.Username, vUser.Platform, vUser.Phone, vUser.Country, t)
 	if err != nil {
@@ -219,8 +214,6 @@ func insertMessageToSchedule(db *sql.DB, schedule *schedule) {
 			}
 
 			game := schedule.Dates[i].Games[j]
-
-			_ = "breakpoint"
 
 			defer stmNewOutbox.Close()
 			gameDate, _ := time.Parse("2006-01-02T15:04:05Z07:00", game.GameDate)
