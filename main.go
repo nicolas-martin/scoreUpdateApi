@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-	"appengine/cloudsql"
 
 	_ "github.com/ziutek/mymysql/godrv"
 	"github.com/gorilla/mux"
@@ -46,7 +45,7 @@ func postSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 
 func insertSubscription(vSubscription *subscription) {
 	//TODO: Put this somewhere else.
-	db, err := sql.Open("mymysql", "cloudsql:sportsupdate*sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
+	db, err := sql.Open("mymysql", "sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
 	if err != nil {
 		panic(err.Error())
 	}
