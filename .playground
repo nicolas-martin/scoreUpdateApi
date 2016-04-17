@@ -1,0 +1,8 @@
+{
+  "project_name": "Sports Update API - Go",
+  "project_description": "Sports Update API on Google App Engine app in Go.",
+  "show_files": [
+    "main/main.go",
+    "app.yaml"
+  ]
+}
