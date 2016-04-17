@@ -13,15 +13,20 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func main() {
+func init() {
+
 	r := mux.NewRouter()
+	r.HandleFunc("/", welcome).Methods("GET")
 	r.HandleFunc("/User", postUserHandler).Methods("POST")
 	r.HandleFunc("/User/{teamID:[0-9]+}", getUserHandler).Methods("GET")
 	r.HandleFunc("/Subscribe", postSubscriptionHandler).Methods("POST")
-
 	http.Handle("/", r)
 
 	//https://statsapi.web.nhl.com/api/v1/schedule?startDate=2016-04-16&endDate=2016-04-21
+}
+
+func welcome(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprint(w, "Welcome to the SportsBot API");
 }
 
 func postSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +49,7 @@ func postSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 
 func insertSubscription(vSubscription *subscription) {
 	//TODO: Put this somewhere else.
-	db, err := sql.Open("mymysql", "sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
+	db, err := sql.Open("mymysql", "cloudsql:sportsbot-1255:us-east1*sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -121,7 +126,7 @@ func postUserHandler(w http.ResponseWriter, r *http.Request) {
 func parseSchedule() {
 
 	//TODO: Put this somewhere else.
-	db, err := sql.Open("mymysql", "sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
+	db, err := sql.Open("mymysql", "cloudsql:sportsbot-1255:us-east1*sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -148,7 +153,7 @@ func parseSchedule() {
 
 func getUser(teamID int) []user {
 	//TODO: Put this somewhere else.
-	db, err := sql.Open("mymysql", "sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
+	db, err := sql.Open("mymysql", "cloudsql:sportsbot-1255:us-east1*sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -178,7 +183,7 @@ func getUser(teamID int) []user {
 
 func insertUser(vUser *user) {
 	//TODO: Put this somewhere else.
-	db, err := sql.Open("mymysql", "sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
+	db, err := sql.Open("mymysql", "cloudsql:sportsbot-1255:us-east1*sportsupdate/root/aiwojefoa39j2a9VVA3jj32fa3")
 	if err != nil {
 		panic(err.Error())
 	}
