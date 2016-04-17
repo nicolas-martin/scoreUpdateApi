@@ -20,6 +20,7 @@ func main() {
 	r.HandleFunc("/Subscribe", postSubscriptionHandler).Methods("POST")
 
 	http.Handle("/", r)
+	http.ListenAndServe(":8080", nil)
 
 	//https://statsapi.web.nhl.com/api/v1/schedule?startDate=2016-04-16&endDate=2016-04-21
 }

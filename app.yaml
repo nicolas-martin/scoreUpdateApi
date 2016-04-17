@@ -1,5 +1,5 @@
-application: sportsupdate
-version: 1
+application: sportsbot-1255
+version: 2
 runtime: go
 api_version: go1
 
