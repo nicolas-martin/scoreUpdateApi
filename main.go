@@ -27,7 +27,7 @@ func init() {
 }
 
 func welcome(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprint(w, "Welcome to the SportsBot API");
+    fmt.Fprint(w, "Welcome to the SportsBot API!!");
 }
 
 func createDbConn() *sql.DB {
