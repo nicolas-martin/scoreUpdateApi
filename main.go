@@ -21,17 +21,19 @@ func init() {
 	r.HandleFunc("/User", postUserHandler).Methods("POST")
 	r.HandleFunc("/User/{teamID:[0-9]+}", getUserHandler).Methods("GET")
 	r.HandleFunc("/Subscribe", postSubscriptionHandler).Methods("POST")
+	r.HandleFunc("/Subscribe/{username}/{teamID:[0-9]+}", deleteSubscriptionHandler).Methods("DELETE")
 	http.Handle("/", r)
 
 	//https://statsapi.web.nhl.com/api/v1/schedule?startDate=2016-04-16&endDate=2016-04-21
 }
 
 func welcome(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprint(w, "Welcome to the SportsBot API!!");
+
+	fmt.Fprint(w, "Welcome to the SportsBot API!!")
 }
 
 func createDbConn() *sql.DB {
-	db, err :=  sql.Open("mysql", "root:aiwojefoa39j2a9VVA3jj32fa3@cloudsql(sportsbot-1255:us-east1:sportsupdate)/ScoreBot")
+	db, err := sql.Open("mysql", "root:aiwojefoa39j2a9VVA3jj32fa3@cloudsql(sportsbot-1255:us-east1:sportsupdate)/ScoreBot")
 
 	if err != nil {
 		panic(err.Error())
@@ -51,6 +53,22 @@ func getAllUserHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func deleteSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	username := vars["username"]
+	teamID := vars["teamID"]
+
+	iTeamID, _ := strconv.Atoi(teamID)
+
+	tSubscription := subscription{Username: username, TeamID: iTeamID}
+
+	fmt.Println(tSubscription)
+
+	deleteSubscription(&tSubscription)
+
+}
+
 func postSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -66,6 +84,38 @@ func postSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(tSubscription)
 
 	insertSubscription(&tSubscription)
+
+}
+
+func deleteSubscription(vSubscription *subscription) {
+
+	db := createDbConn()
+
+	defer db.Close()
+
+	sqlQuery := "SELECT `Users`.`UserId` FROM `ScoreBot`.`Users` WHERE `Users`.`UserName` = ?"
+
+	row, err := db.Query(sqlQuery, vSubscription.Username)
+	if err != nil {
+		panic(err)
+	}
+
+	var userID int
+
+	for row.Next() {
+
+		err = row.Scan(&userID)
+	}
+
+	stmNewOutbox, err := db.Prepare("DELETE FROM `ScoreBot`.`Subscription` WHERE Users_UserId = ? AND Teams_TeamId = ?")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	_, err = stmNewOutbox.Exec(userID, vSubscription.TeamID)
+	if err != nil {
+		panic(err.Error())
+	}
 
 }
 
@@ -143,10 +193,6 @@ func postUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseSchedule() {
-	
-	db := createDbConn()
-
-	defer db.Close()
 
 	//TODO: Select the entire season
 	resp, err := http.Get("https://statsapi.web.nhl.com/api/v1/schedule?startDate=2016-04-16&endDate=2016-04-21")
@@ -155,19 +201,26 @@ func parseSchedule() {
 		fmt.Println(err)
 	}
 
-	schedule := new(schedule)
-	err = json.NewDecoder(resp.Body).Decode(schedule)
+	if resp.Body == nil {
+		panic("ahhh")
+	}
 
-	if err != nil {
+	var tSchedule schedule
+
+	dec := json.NewDecoder(resp.Body)
+
+	err2 := dec.Decode(&tSchedule)
+
+	if err2 != nil {
 		fmt.Println(err)
 	}
 
-	insertMessageToSchedule(db, schedule)
+	insertMessageToSchedule(&tSchedule)
 
 }
 
 func getUser(teamID int) []user {
-	
+
 	db := createDbConn()
 
 	defer db.Close()
@@ -186,7 +239,11 @@ func getUser(teamID int) []user {
 	for row.Next() {
 		u := user{}
 
-		err = row.Scan(&u.Username, &u.Platform, &u.Phone, &u.Country, &u.Joined)
+		err := row.Scan(&u.Username, &u.Platform, &u.Phone, &u.Country, &u.Joined)
+
+		if err != nil {
+			fmt.Println(err)
+		}
 
 		userList = append(userList, u)
 	}
@@ -226,7 +283,7 @@ func getAllUsers() []user {
 }
 
 func insertUser(vUser *user) {
-	
+
 	db := createDbConn()
 
 	defer db.Close()
@@ -247,19 +304,20 @@ func insertUser(vUser *user) {
 
 }
 
-func insertMessageToSchedule(db *sql.DB, schedule *schedule) {
+func insertMessageToSchedule(pSchedule *schedule) {
+	db := createDbConn()
+	for i := 0; i < len(pSchedule.Dates); i++ {
 
-	for i := 0; i < len(schedule.Dates); i++ {
-
-		for j := 0; j < len(schedule.Dates[i].Games); j++ {
+		for j := 0; j < len(pSchedule.Dates[i].Games); j++ {
 
 			// stmNewOutbox, err := db.Prepare("INSERT INTO `ScoreBot`.`Event` (`Type`,`Media`,`MatchId`,`Score`, `IsSent`) VALUES (?, ?, ?, ?, 0)")
 			stmNewOutbox, err := db.Prepare("INSERT INTO `ScoreBot`.`Games` (`AwayId`, `Start`,`Finish`,`HomeScore`,`AwayScore`,`Status`,`homeId`, `url`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
 			if err != nil {
-				panic(err.Error())
+				// panic(err.Error())
+				fmt.Println(err)
 			}
 
-			game := schedule.Dates[i].Games[j]
+			game := pSchedule.Dates[i].Games[j]
 
 			defer stmNewOutbox.Close()
 			gameDate, _ := time.Parse("2006-01-02T15:04:05Z07:00", game.GameDate)
