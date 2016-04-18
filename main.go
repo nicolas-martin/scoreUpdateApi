@@ -22,6 +22,7 @@ func init() {
 	r.HandleFunc("/User/{teamID:[0-9]+}", getUserHandler).Methods("GET")
 	r.HandleFunc("/Subscribe", postSubscriptionHandler).Methods("POST")
 	r.HandleFunc("/Subscribe/{username}/{teamID:[0-9]+}", deleteSubscriptionHandler).Methods("DELETE")
+	r.HandleFunc("/Unsubscribe", postDeleteSubscriptionHandler).Methods("POST")
 	http.Handle("/", r)
 
 	//https://statsapi.web.nhl.com/api/v1/schedule?startDate=2016-04-16&endDate=2016-04-21
@@ -50,6 +51,21 @@ func getAllUserHandler(w http.ResponseWriter, r *http.Request) {
 	jsonUsers, _ := json.Marshal(users)
 
 	w.Write(jsonUsers)
+
+}
+
+func postDeleteSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	tSubscription := subscription{}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		//TODO: Find out return error coce
+		fmt.Println(err)
+	}
+
+	json.Unmarshal(body, &tSubscription)
+
+	deleteSubscription(&tSubscription)
 
 }
 
